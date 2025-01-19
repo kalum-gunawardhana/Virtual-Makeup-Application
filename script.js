@@ -1,40 +1,30 @@
-let video = document.getElementById('video');
-let model;
-let canvas = document.getElementById('canvas');
-let ctx = canvas.getContext('2d');
+const webcam = document.getElementById('webcam');
+const overlay = document.getElementById('overlay');
+const emotionDisplay = document.getElementById('emotion');
+const ctx = overlay.getContext('2d');
 
-const setupCamara = () => {
-  navigator.mediaDevices.getUserMedia({
-    video: { width: 600, height: 400 },
-    audio: false,
-  }).then(stream => {
-    video.srcObject = stream;
-  });
+async function setupCamera() {
+  const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+  webcam.srcObject = stream;
 }
 
-const detectFaces = async () => {
-  const prediction = await model.estimateFaces(video, false);
+async function detectEmotion() {
+  const model = await blazeface.load();
+  
+  setInterval(async () => {
+    const predictions = await model.estimateFaces(webcam, false);
 
-  ctx.drawImage(video, 0, 0, 600, 400);
+    ctx.clearRect(0, 0, overlay.width, overlay.height);
+    predictions.forEach(prediction => {
+      const [x, y, width, height] = prediction.boundingBox;
+      ctx.strokeRect(x, y, width, height);
 
-  prediction.forEach(pred => {
-    ctx.beginPath();
-    ctx.lineWidth = "4";
-    ctx.strokeStyle = "blue";
-    ctx.rect(
-      pred.topLeft[0],
-      pred.topLeft[1],
-      pred.bottomRight[0] - pred.topLeft[0],
-      pred.bottomRight[1] - pred.topLeft[1]
-    );
-    ctx.stroke();
-  });
+      // Placeholder for emotion detection logic
+      const emotion = "Happy"; // Replace with actual emotion model result
+      ctx.fillText(emotion, x, y - 10);
+      emotionDisplay.innerText = emotion;
+    });
+  }, 100);
 }
 
-setupCamara();
-
-video.addEventListener("loadeddata", async () => {
-  model = await blazeFace.load();
-
-  setInterval(detectFaces, 100);
-});
+setupCamera().then(detectEmotion);

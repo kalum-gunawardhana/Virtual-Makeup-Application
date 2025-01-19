@@ -1,22 +1,16 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Emotion Detection</title>
 </head>
 
 <body>
-    <div class="video-container">
-        <video id="video" autoplay playsinline></video>
-        <canvas id="canvas" width="600" height="400"></canvas>
-    </div>
-
+    <video id="webcam" autoplay></video>
+    <canvas id="overlay"></canvas>
+    <div id="emotion-display">Detected Emotion: <span id="emotion"></span></div>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/blazeface"></script>
-
     <script src="script.js"></script>
 </body>
 
