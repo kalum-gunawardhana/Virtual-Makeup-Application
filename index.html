@@ -1,16 +1,22 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-    <title>Emotion Detection</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Object Detection App</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
 </head>
 
 <body>
-    <video id="webcam" autoplay></video>
-    <canvas id="overlay"></canvas>
-    <div id="emotion-display">Detected Emotion: <span id="emotion"></span></div>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/blazeface"></script>
+    <div class="container">
+        <h1>Object Detection App</h1>
+        <input type="file" id="imageUpload" accept="image/*">
+        <canvas id="canvas"></canvas>
+        <div id="status">Model Loading...</div>
+    </div>
     <script src="script.js"></script>
 </body>
 
