@@ -1,78 +1,45 @@
-const imageUpload = document.getElementById("imageUpload");
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
-const statusDiv = document.getElementById("status");
+const videoElement = document.getElementsByClassName('input_video')[0];
+const canvasElement = document.getElementsByClassName('output_canvas')[0];
+const canvasCtx = canvasElement.getContext('2d');
 
-let model;
-
-// Load the COCO-SSD model
-async function loadModel() {
-  statusDiv.textContent = "Loading model...";
-  model = await cocoSsd.load();
-  statusDiv.textContent = "Model loaded! Upload an image to start detecting.";
-}
-
-loadModel();
-
-// Handle image upload
-imageUpload.addEventListener("change", async (event) => {
-  const file = event.target.files[0];
-  if (file) {
-    const img = new Image();
-    img.onload = async () => {
-      canvas.width = img.width;
-      canvas.height = img.height;
-      ctx.drawImage(img, 0, 0, img.width, img.height);
-
-      statusDiv.textContent = "Detecting objects...";
-      const predictions = await model.detect(canvas);
-      drawPredictions(predictions);
-    };
-    img.src = URL.createObjectURL(file);
+function onResults(results) {
+  canvasCtx.save();
+  canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+  canvasCtx.drawImage(
+      results.image, 0, 0, canvasElement.width, canvasElement.height);
+  if (results.multiFaceLandmarks) {
+    for (const landmarks of results.multiFaceLandmarks) {
+      drawConnectors(canvasCtx, landmarks, FACEMESH_TESSELATION,
+                     {color: '#C0C0C070', lineWidth: 1});
+      drawConnectors(canvasCtx, landmarks, FACEMESH_RIGHT_EYE, {color: '#FF3030'});
+      drawConnectors(canvasCtx, landmarks, FACEMESH_RIGHT_EYEBROW, {color: '#FF3030'});
+      drawConnectors(canvasCtx, landmarks, FACEMESH_RIGHT_IRIS, {color: '#FF3030'});
+      drawConnectors(canvasCtx, landmarks, FACEMESH_LEFT_EYE, {color: '#30FF30'});
+      drawConnectors(canvasCtx, landmarks, FACEMESH_LEFT_EYEBROW, {color: '#30FF30'});
+      drawConnectors(canvasCtx, landmarks, FACEMESH_LEFT_IRIS, {color: '#30FF30'});
+      drawConnectors(canvasCtx, landmarks, FACEMESH_FACE_OVAL, {color: '#E0E0E0'});
+      drawConnectors(canvasCtx, landmarks, FACEMESH_LIPS, {color: '#E0E0E0'});
+    }
   }
+  canvasCtx.restore();
+}
+
+const faceMesh = new FaceMesh({locateFile: (file) => {
+  return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+}});
+faceMesh.setOptions({
+  maxNumFaces: 1,
+  refineLandmarks: true,
+  minDetectionConfidence: 0.5,
+  minTrackingConfidence: 0.5
 });
+faceMesh.onResults(onResults);
 
-// Draw predictions
-function drawPredictions(predictions) {
-  predictions.forEach((prediction) => {
-    const [x, y, width, height] = prediction.bbox;
-    const text = `${prediction.class} (${(prediction.score * 100).toFixed(1)}%)`;
-
-    // Draw bounding box
-    ctx.strokeStyle = "red";
-    ctx.lineWidth = 2;
-    ctx.strokeRect(x, y, width, height);
-
-    // Draw label background
-    ctx.fillStyle = "red";
-    ctx.fillRect(x, y - 20, ctx.measureText(text).width + 10, 20);
-
-    // Draw label text
-    ctx.fillStyle = "white";
-    ctx.fillText(text, x + 5, y - 5);
-  });
-
-  statusDiv.textContent = "Detection complete!";
-}
-
-const video = document.createElement("video");
-video.width = 640;
-video.height = 480;
-document.body.appendChild(video);
-
-async function startCamera() {
-  const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-  video.srcObject = stream;
-  video.play();
-
-  video.addEventListener("loadeddata", () => detectFromVideo(video));
-}
-
-async function detectFromVideo(video) {
-  const predictions = await model.detect(video);
-  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-  drawPredictions(predictions);
-  requestAnimationFrame(() => detectFromVideo(video));
-}
-
-startCamera();
+const camera = new Camera(videoElement, {
+  onFrame: async () => {
+    await faceMesh.send({image: videoElement});
+  },
+  width: 1280,
+  height: 720
+});
+camera.start();
